@@ -17,18 +17,45 @@ This course will walk you through **Claude Code** — Anthropic's AI coding agen
 
 ## Course Structure
 
-| Module | Topic | Description |
-| ------ | ----- | ----------- |
-| 01 | [LLM Fundamentals](01-llm-fundamentals.md) | How large language models work, tokens, context windows, Anthropic and Claude |
-| 02 | [What is Claude Code](02-what-is-claude-code.md) | Installation, authentication, core commands, IDE integration |
-| 03 | [Claude Code Capabilities](03-claude-code-capabilities.md) | Agentic loop, built-in tools, multimodal input, headless mode |
-| 04 | [Hands-on: Stock Analysis](04-stock-analysis.md) | Build a Microsoft stock analysis tool step by step with Claude Code |
-| 05 | [More Examples](05-more-examples.md) | 9 real-world examples: web scraper, REST API, Telegram bot, testing, and more |
-| 06 | [AI Code Quality](06-code-quality.md) | Model comparison, quality checklist, benchmarks, when not to trust AI |
-| 07 | [Agent Army](07-agent-army.md) | Multi-agent orchestration, Agent Teams, git worktrees, tmux, patterns |
-| 08 | [MCP & Extensions](08-mcp-and-skills.md) | Model Context Protocol, Agent Skills, Hooks, Plugins |
-| 09 | [Best Practices](09-best-practices.md) | Context management, prompting strategies, session management, scaling |
-| 10 | [Other Models](10-other-models.md) | OpenRouter, Ollama, LiteLLM, cloud providers, Cline & Kilo Code |
+### [Module 01: LLM Fundamentals](01-llm-fundamentals.md)
+
+What are large language models and how do they actually work? We cover the basics — tokens, parameters, context windows, temperature — and introduce Anthropic's Claude model family. No prior AI knowledge needed.
+
+### [Module 02: What is Claude Code](02-what-is-claude-code.md)
+
+Install Claude Code, set up authentication, and learn the core slash commands. We compare Claude Code to other AI tools (Copilot, Cursor, ChatGPT) and show how to run it alongside your IDE for the best workflow.
+
+### [Module 03: Claude Code Capabilities](03-claude-code-capabilities.md)
+
+Deep dive into the agentic loop — how Claude Code reads files, edits code, runs commands, and verifies results in an autonomous cycle. Plus: multimodal input (screenshots, mockups, diagrams), headless mode for automation, and session management.
+
+### [Module 04: Hands-on — Stock Analysis](04-stock-analysis.md)
+
+Your first real project with Claude Code. We build a Python program that downloads Microsoft stock data, plots price charts with moving averages, adds trading volume, and annotates key events — all guided by Claude Code step by step.
+
+### [Module 05: More Examples](05-more-examples.md)
+
+Nine practical examples showing the breadth of what Claude Code can do: web scraper, file organizer, REST API with FastAPI, sales dashboard, Telegram bot, code refactoring, database utilities, pytest test suite, and auto-generated documentation.
+
+### [Module 06: AI Code Quality](06-code-quality.md)
+
+Not all AI-generated code is production-ready. We compare Claude models on speed, quality, and price, walk through a quality checklist (basic to advanced), review SWE-bench results, and discuss when you should never trust AI output.
+
+### [Module 07: Agent Army — Autonomous Development](07-agent-army.md)
+
+The most advanced module. Run multiple Claude Code agents in parallel — from simple multi-terminal setups to bash orchestrators, headless pipelines, specification-as-contract, and the built-in Agent Teams feature. Includes git worktrees, tmux setup, orchestration tools (Gas Town, OpenSpec, Claude MPM, cmux), and real-world patterns.
+
+### [Module 08: MCP & Extensions](08-mcp-and-skills.md)
+
+Extend Claude Code with the Model Context Protocol (MCP) to connect to GitHub, Sentry, PostgreSQL, Notion, Slack, and hundreds more. Create custom Agent Skills for your team's workflows. Set up Hooks for deterministic automation and explore Plugins.
+
+### [Module 09: Best Practices](09-best-practices.md)
+
+Battle-tested advice for getting the most out of Claude Code. The #1 rule (context management), the explore-plan-code workflow, writing specific prompts, session management (Esc, /rewind, /clear), CLAUDE.md best practices, and scaling patterns (writer/reviewer, fan-out).
+
+### [Module 10: Other Models](10-other-models.md)
+
+Use Claude Code with models beyond Claude — OpenRouter (400+ models, including free ones), Claude Code Router (smart task routing), Ollama (local models for privacy), LiteLLM, and official cloud providers (Bedrock, Vertex, Foundry). Plus: Cline and Kilo Code as VS Code alternatives when Claude Code isn't available.
 
 ## What You'll Need
 
