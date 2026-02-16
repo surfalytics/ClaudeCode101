@@ -2,18 +2,24 @@
 
 ## Introduction
 
-Claude Code on its own can do a lot: read files, write code, run commands. But its true power is unlocked when you **connect external tools**. In this module, we'll cover:
+Claude Code on its own can do a lot: read files, write code, run commands. But its true power is unlocked when you **connect external tools**. In this module, we'll cover two key technologies:
 
 - **MCP (Model Context Protocol)** — a protocol for connecting Claude Code to external services: databases, GitHub, Jira, Sentry, and hundreds more
 - **Agent Skills** — modular skills that make Claude a specialist in a specific domain
 
 ## Part 1: MCP — Model Context Protocol
 
+### What is MCP
+
 **MCP** is an open standard for connecting AI to external tools. Simply put, MCP lets Claude Code work not just with files on your computer, but with any external service.
+
+Think of Claude Code as a craftsman, and MCP servers as his tools. Without tools, he can only work with his hands. With tools, he can do much more.
 
 > Documentation: [code.claude.com/docs/en/mcp](https://code.claude.com/docs/en/mcp)
 
-**What you can do with MCP:**
+### What You Can Do with MCP
+
+With connected MCP servers, Claude Code can:
 
 - **Work with task trackers**: "Implement the feature from Jira ticket ENG-4521 and create a PR on GitHub"
 - **Analyze monitoring**: "Check Sentry — what errors appeared after the last deploy?"
@@ -21,10 +27,11 @@ Claude Code on its own can do a lot: read files, write code, run commands. But i
 - **Work with designs**: "Update the email template based on new mockups from Figma"
 - **Automate routine**: "Create draft emails in Gmail for these 10 users"
 
-**MCP Architecture:**
+### MCP Architecture
 
 ```
 Claude Code
+    │
     ├── MCP Server: GitHub    → creating PRs, review, issues
     ├── MCP Server: Sentry    → error monitoring
     ├── MCP Server: PostgreSQL → database queries
@@ -34,7 +41,7 @@ Claude Code
 
 Each MCP server is a small program that "translates" Claude Code requests into commands for a specific service.
 
-**MCP Server Types:**
+### MCP Server Types
 
 | Type | How it works | When to use |
 |------|-------------|-------------|
@@ -42,9 +49,11 @@ Each MCP server is a small program that "translates" Claude Code requests into c
 | **SSE (remote)** | Legacy variant of HTTP | Older servers that haven't updated yet |
 | **stdio (local)** | Runs as a process on your machine | Databases, local tools |
 
-**Installing MCP servers:**
+### Installing MCP Servers
 
-HTTP server (cloud):
+#### HTTP Server (cloud)
+
+Most popular services provide ready-made HTTP MCP servers:
 
 ```bash
 # Connect GitHub
@@ -57,15 +66,21 @@ claude mcp add --transport http notion https://mcp.notion.com/mcp
 claude mcp add --transport http sentry https://mcp.sentry.dev/mcp
 ```
 
-Stdio server (local):
+#### Stdio Server (local)
+
+Local servers run on your machine:
 
 ```bash
 # Connect PostgreSQL
 claude mcp add --transport stdio db -- npx -y @bytebase/dbhub \
   --dsn "postgresql://user:pass@localhost:5432/mydb"
+
+# Connect Airtable
+claude mcp add --transport stdio --env AIRTABLE_API_KEY=YOUR_KEY airtable \
+  -- npx -y airtable-mcp-server
 ```
 
-Server management:
+#### Server Management
 
 ```bash
 # View all connected servers
@@ -81,7 +96,7 @@ claude mcp remove github
 /mcp
 ```
 
-**Popular MCP servers:**
+### Popular MCP Servers
 
 | Server | What it does | Install command |
 |--------|-------------|-----------------|
@@ -93,7 +108,7 @@ claude mcp remove github
 
 Full list: [github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)
 
-**Authentication:**
+### Authentication
 
 Many cloud MCP servers require authentication. Claude Code supports OAuth 2.0:
 
@@ -115,7 +130,7 @@ claude mcp add --transport http my-api https://api.example.com/mcp \
   --header "Authorization: Bearer your-token"
 ```
 
-**Visibility Scopes:**
+### Visibility Scopes
 
 MCP servers can be configured at different levels:
 
@@ -130,9 +145,30 @@ MCP servers can be configured at different levels:
 claude mcp add --transport http paypal --scope project https://mcp.paypal.com/mcp
 ```
 
-The `.mcp.json` file can be committed to git, and all team members will get access to the same servers.
+The `.mcp.json` file can be committed to git, and all team members will get access to the same servers:
 
-**Practical example: Debugging with Sentry and GitHub**
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "db": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "${DATABASE_URL}"],
+      "env": {}
+    }
+  }
+}
+```
+
+Note the `${DATABASE_URL}` — Claude Code supports environment variables in configuration. Each developer can set their own values.
+
+### Practical Example: Debugging with Sentry and GitHub
+
+Let's say you received a notification about a production error:
 
 ```
 > Connect to Sentry. What new errors appeared in the last 24 hours?
@@ -161,7 +197,7 @@ Claude Code (via MCP):
 
 The entire cycle — from error discovery to PR creation — takes just a few minutes.
 
-**Practical example: Database queries**
+### Practical Example: Database Queries
 
 ```
 > How many new users registered in the last week?
@@ -177,15 +213,58 @@ Claude Code (via MCP to PostgreSQL):
 | ...
 
 Total: 987 new users. 12% growth compared to last week."
+
+> Write a SQL query that finds our most active users
+  and create a script for automated reporting
+
+Claude Code:
+1. Writes the SQL query
+2. Creates a Python script with database connection
+3. Adds CSV export and visualization
+```
+
+### MCP Resources via @-mentions
+
+MCP servers can provide resources that you can reference via `@`:
+
+```
+> Analyze @github:issue://123 and suggest a solution
+
+> Compare @postgres:schema://users with @docs:file://database/user-model
+```
+
+This works like regular @-mentions for files, but the data comes from external services.
+
+### MCP Tool Search
+
+When you have many MCP servers connected (dozens), all their tools can consume the context window. Claude Code solves this with **Tool Search**:
+
+- Instead of loading all tools at once, Claude Code searches for the needed ones per request
+- Activates automatically when tools occupy more than 10% of the context
+- You won't notice the difference — everything works as before, just more efficiently
+
+```bash
+# Set the auto-activation threshold (5% of context)
+ENABLE_TOOL_SEARCH=auto:5 claude
+
+# Always enabled
+ENABLE_TOOL_SEARCH=true claude
+
+# Always disabled
+ENABLE_TOOL_SEARCH=false claude
 ```
 
 ## Part 2: Agent Skills — Modular Skills
+
+### What Are Agent Skills
 
 **Agent Skills** are modular instruction packages that turn Claude from a universal assistant into a specialist in a specific area.
 
 Imagine hiring a new employee. You give them a folder with instructions: "Here's how we work with databases. Here are templates. Here are scripts." Skills work the same way — it's an "instruction folder" for Claude.
 
-**Why you need Skills:**
+> Documentation: [platform.claude.com/docs/en/agents-and-tools/agent-skills/overview](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview)
+
+### Why You Need Skills
 
 | Without Skills | With Skills |
 |---------------|------------|
@@ -193,7 +272,9 @@ Imagine hiring a new employee. You give them a folder with instructions: "Here's
 | You repeat the same instructions | Write instructions once — use forever |
 | Claude gives generic answers | Claude gives answers following your rules and processes |
 
-**Built-in Skills:**
+### Built-in Skills
+
+Anthropic provides ready-made Skills for working with documents:
 
 | Skill | What it does |
 |-------|-------------|
@@ -202,9 +283,75 @@ Imagine hiring a new employee. You give them a folder with instructions: "Here's
 | **Word (docx)** | Creating and editing documents |
 | **PDF (pdf)** | Generating PDF reports |
 
-**Creating custom Skills for Claude Code:**
+These Skills work "out of the box" — on Claude.ai and through the API.
+
+### How Skills Work: Three Loading Levels
+
+Skills use the principle of **progressive loading** — Claude loads only what is needed right now.
+
+#### Level 1: Metadata (always loaded)
+
+At startup, Claude sees only a brief description of each skill:
+
+```yaml
+---
+name: pdf-processing
+description: Extracts text and tables from PDF files.
+  Use when working with PDFs or when the user mentions PDF.
+---
+```
+
+This costs only ~100 tokens per skill. You can install many skills without losing context.
+
+#### Level 2: Instructions (loaded on demand)
+
+When your task matches a skill's description, Claude reads the full instructions:
+
+```markdown
+# PDF Processing
+
+## Quick Start
+
+Use pdfplumber to extract text:
+
+```python
+import pdfplumber
+
+with pdfplumber.open("document.pdf") as pdf:
+    text = pdf.pages[0].extract_text()
+```
+
+For filling forms, see FORMS.md.
+```
+
+This costs up to ~5000 tokens — loaded only when needed.
+
+#### Level 3: Resources (loaded as needed)
+
+Skills can contain additional files:
+
+```
+pdf-skill/
+├── SKILL.md           # Main instructions
+├── FORMS.md           # Guide to form filling
+├── REFERENCE.md       # Detailed API documentation
+└── scripts/
+    └── fill_form.py   # Utility script
+```
+
+Claude loads these files only if they are needed for the current task. Scripts are executed via bash — their code doesn't enter the context, only the result.
+
+| Level | When loaded | Cost | Content |
+|-------|------------|------|---------|
+| 1. Metadata | Always, at startup | ~100 tokens | Name and description |
+| 2. Instructions | When skill is activated | Up to 5K tokens | SKILL.md |
+| 3. Resources | As needed | Unlimited | Files, scripts, references |
+
+### Creating Custom Skills for Claude Code
 
 In Claude Code, skills are simply folders with a `SKILL.md` file.
+
+#### Skill Structure
 
 ```
 .claude/skills/my-skill/
@@ -218,18 +365,27 @@ Or in the home folder (for all projects):
 └── SKILL.md
 ```
 
-**Example: Skill for database work**
+#### Example: Skill for Database Work
 
 ```yaml
+---
 name: company-database
 description: Working with the company database. Use when making
   database queries, creating reports, or analyzing user data.
+---
 
 # Working with Company Database
 
 ## Connection
 
-Use SQLAlchemy with the DATABASE_URL environment variable.
+Use SQLAlchemy with the DATABASE_URL environment variable:
+
+```python
+from sqlalchemy import create_engine
+import os
+
+engine = create_engine(os.environ["DATABASE_URL"])
+```
 
 ## Main Tables
 
@@ -247,32 +403,111 @@ Use SQLAlchemy with the DATABASE_URL environment variable.
 - Dates always in ISO 8601 format
 ```
 
-**Example: Skill for code review**
+#### Example: Skill for Code Review
 
 ```yaml
+---
 name: code-review
 description: Conducts code review per company standards.
   Use for code review, PR checks, or quality analysis.
+---
 
 # Code Review per Company Standards
 
 ## Review Checklist
 
-## Must check:
+### Must check:
 1. **Type hints** — all functions must have types
 2. **Docstrings** — all public functions documented
 3. **Tests** — tests exist for new code
 4. **Security** — no SQL injection, XSS, hardcoded secrets
 5. **Logging** — uses logging, not print
 
-## Comment format:
+### Comment format:
 - Critical: blocks merge
 - Important: should be fixed
 - Minor: can fix later
 - Suggestion: optional, but improves code
+
+## Output
+
+Create a review.md file with the structure:
+1. Brief description of changes
+2. List of issues found (by category)
+3. Overall assessment: approve / request changes
 ```
 
+#### Example: Skill for Deployment
+
+```yaml
+---
+name: deployment
+description: Application deployment management. Use for deploying,
+  setting up CI/CD, or working with Docker/Kubernetes.
+---
+
+# Application Deployment
+
+## Environments
+
+| Environment | URL | Branch |
+|-------------|-----|--------|
+| dev | dev.app.com | develop |
+| staging | staging.app.com | release/* |
+| production | app.com | main |
+
+## Deployment Process
+
+1. Make sure all tests pass
+2. Create a version tag: `git tag v1.X.Y`
+3. Run deploy: `make deploy ENV=staging`
+4. Check logs: `make logs ENV=staging`
+5. If OK — deploy to production
+
+## Docker
+
+```bash
+# Build image
+docker build -t app:latest .
+
+# Run locally
+docker compose up -d
+
+# Logs
+docker compose logs -f app
+```
+
+## Rollback
+
+If there are problems in production:
+```bash
+make rollback ENV=production
+```
+```
+
+### Where Skills Work
+
+| Product | Built-in Skills | Custom Skills |
+|---------|----------------|---------------|
+| **Claude.ai** | Yes | Yes (upload via settings) |
+| **Claude API** | Yes | Yes (via Skills API) |
+| **Claude Code** | No | Yes (folders with SKILL.md) |
+
+In Claude Code, skills are the file system. Simply create a folder and a file, and Claude will find them automatically.
+
+### Skills Security
+
+Skills are a powerful tool. Only use skills from trusted sources:
+
+- Skills that you wrote yourself
+- Skills from Anthropic (built-in)
+- Skills from your team (via git)
+
+Do not install skills from unknown sources — they may contain malicious instructions.
+
 ## Part 3: MCP + Skills + Agent Teams = Superpower
+
+### Combining Everything Together
 
 The most powerful scenarios combine MCP, Skills, and Agent Teams:
 
@@ -297,9 +532,9 @@ Project Specification
           └── Skill: deployment
 ```
 
-**Example of a workday with MCP + Skills:**
+### Example of a Workday with MCP + Skills
 
-Morning — check errors:
+**Morning — check errors:**
 ```
 > Check Sentry for overnight errors. Any new ones?
   (MCP: Sentry → finds errors)
@@ -308,7 +543,7 @@ Morning — check errors:
   (MCP: GitHub → creates PR with fix)
 ```
 
-Day — work on a feature:
+**Day — work on a feature:**
 ```
 > What tasks are assigned to me in Jira?
   (MCP: Jira → shows tasks)
@@ -319,20 +554,63 @@ Day — work on a feature:
   (Skill: code-review → checks code per standards)
 ```
 
-Evening — deploy:
+**Evening — deploy:**
 ```
 > Everything is ready. Deploy to staging and check logs.
   (Skill: deployment → follows the deployment process)
   (MCP: Sentry → checks for new errors)
 ```
 
+### Setting Up for a Team
+
+Create `.mcp.json` in the project root and commit it to git:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "db": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "${DATABASE_URL}"],
+      "env": {}
+    }
+  }
+}
+```
+
+Add skills to the `.claude/skills/` folder in the project:
+
+```
+my-project/
+├── .mcp.json                    # MCP servers for the team
+├── .claude/
+│   └── skills/
+│       ├── code-review/
+│       │   └── SKILL.md         # Review standards
+│       ├── database/
+│       │   └── SKILL.md         # Database work rules
+│       └── deployment/
+│           └── SKILL.md         # Deployment process
+├── CLAUDE.md                    # General project rules
+└── src/
+    └── ...
+```
+
+Every team member will get the same tools and rules when launching Claude Code in the project.
+
 ## Part 4: Hooks — Automation Without AI
 
 > Documentation: [code.claude.com/docs/en/hooks](https://code.claude.com/docs/en/hooks-guide)
 
+### What Are Hooks
+
 **Hooks** are regular scripts that run **automatically** on specific events in Claude Code. Unlike instructions in CLAUDE.md (which Claude might ignore), hooks are **guaranteed** to execute every time.
 
-**When to use Hooks:**
+### When to Use Hooks
 
 - Run a linter after every file edit
 - Block changes to certain directories
@@ -340,9 +618,15 @@ Evening — deploy:
 - Send a notification when Claude touches critical files
 - Run a security check before commit
 
-**Example: Auto-formatting after edits**
+### Example: Auto-formatting After Edits
 
-Configure in `.claude/settings.json`:
+Claude can write a hook itself. Just ask:
+
+```
+> Write a hook that runs eslint --fix after every file edit
+```
+
+Or configure manually in `.claude/settings.json`:
 
 ```json
 {
@@ -357,7 +641,7 @@ Configure in `.claude/settings.json`:
 }
 ```
 
-**Event types:**
+### Event Types
 
 | Event | When it triggers |
 |-------|-----------------|
@@ -368,21 +652,53 @@ Configure in `.claude/settings.json`:
 | `onSessionEnd` | When a session ends |
 | `onCompact` | When context is compacted |
 
-The key difference from CLAUDE.md: hooks are deterministic. They don't use AI, they just run a script. It's a guarantee, not a recommendation.
+**The key difference from CLAUDE.md:** hooks are deterministic. They don't use AI, they just run a script. It's a guarantee, not a recommendation.
 
 ## Part 5: Plugins — Extension Packages
 
 > Documentation: [code.claude.com/docs/en/plugins](https://code.claude.com/docs/en/plugins)
 
+### What Are Plugins
+
 **Plugins** are packages that bundle Skills, Hooks, sub-agents, and MCP servers into one installable unit. Think of them as browser extensions, but for Claude Code.
 
-**How to install:**
+### Why You Need Them
+
+- **Reusability** — one configuration for multiple projects
+- **Distribution** — share your tools with the team
+- **Marketplaces** — install ready-made extensions from the community
+
+### How to Install
 
 ```
 /plugin    # Open marketplace and select a plugin
 ```
 
-## Extension Map
+### What's Inside a Plugin
+
+```
+my-plugin/
+├── skills/
+│   └── review/SKILL.md       # Review checklist
+├── hooks/
+│   └── settings.json          # Hooks for auto-formatting
+├── agents/
+│   └── security-reviewer.md   # Sub-agent for security checks
+└── mcp/
+    └── config.json            # MCP servers
+```
+
+Plugins with skills use namespaces: `/my-plugin:review` to avoid conflicts with others.
+
+### Useful Plugins
+
+If you work with typed languages (TypeScript, Go, Rust), install the **code intelligence** plugin — it gives Claude precise symbol navigation and automatic error detection after edits.
+
+## Part 6: How Everything Works Together
+
+> More details: [code.claude.com/docs/en/features-overview](https://code.claude.com/docs/en/features-overview)
+
+### Extension Map
 
 | Extension | What it does | When loaded | Context load |
 |-----------|-------------|-------------|-------------|
@@ -394,17 +710,56 @@ The key difference from CLAUDE.md: hooks are deterministic. They don't use AI, t
 | **Hooks** | Automatic scripts | On event | Zero |
 | **Plugins** | Extension packages | On install | Depends on content |
 
+### Principle: Less Frequent is Better
+
+Every extension takes up space in the context. Priority order:
+
+1. **CLAUDE.md** — for rules that are needed ALWAYS (up to ~500 lines)
+2. **Skills** — for reference materials and workflows (loaded on demand)
+3. **MCP** — for connecting to external services (tool definitions — every request)
+4. **Hooks** — for automation (zero context load)
+
+### Extension Combinations
+
+| Combination | How it works | Example |
+|------------|-------------|---------|
+| Skill + MCP | MCP provides the connection, Skill teaches how to use it | MCP connects the database, Skill describes the schema |
+| Skill + sub-agent | Skill launches sub-agents for parallel work | `/review` launches 3 sub-agents: security, performance, style |
+| CLAUDE.md + Skills | CLAUDE.md — rules always, Skills — references on demand | CLAUDE.md: "follow API conventions", Skill: full API guide |
+| Hook + MCP | Hook triggers external actions via MCP | Hook sends to Slack when Claude touches critical files |
+
 ## Module Summary
 
-- **MCP** — open protocol for connecting to external services (GitHub, Sentry, PostgreSQL, Notion, Slack)
-- Three server types: HTTP, SSE (legacy), stdio (local)
+### MCP
+- MCP — open protocol for connecting Claude Code to external services
+- Three server types: HTTP (cloud), SSE (legacy), stdio (local)
+- Installation via `claude mcp add`
 - Three visibility scopes: local, project, user
-- **Agent Skills** — modular instruction packages with progressive loading
+- Dozens of ready-made servers: GitHub, Sentry, PostgreSQL, Notion, Slack, and more
+- Tool Search automatically optimizes working with many servers
+
+### Agent Skills
+- Skills — modular instruction packages for Claude
+- Three loading levels: metadata → instructions → resources
 - Built-in skills: PowerPoint, Excel, Word, PDF
 - Custom skills — a folder with a SKILL.md file
-- **Hooks** — deterministic scripts, zero context load
-- **Plugins** — extension packages (Skills + Hooks + sub-agents + MCP)
+- Only use skills from trusted sources
+
+### Hooks
+- Deterministic scripts, triggered on events
+- Guaranteed execution (unlike CLAUDE.md)
+- Ideal for linting, formatting, security checks
+- Zero context load
+
+### Plugins
+- Packages of Skills + Hooks + sub-agents + MCP
+- Marketplace for sharing extensions
+- Namespaces to avoid conflicts
+
+### Together
 - MCP + Skills + Hooks + Agent Teams = full workflow automation
+- `.mcp.json` + `.claude/skills/` + `.claude/settings.json` in git = unified tools for the whole team
+- From bug discovery to deploying the fix — all through Claude Code
 
 ---
 
