@@ -728,6 +728,177 @@ Every extension takes up space in the context. Priority order:
 | CLAUDE.md + Skills | CLAUDE.md — rules always, Skills — references on demand | CLAUDE.md: "follow API conventions", Skill: full API guide |
 | Hook + MCP | Hook triggers external actions via MCP | Hook sends to Slack when Claude touches critical files |
 
+## Part 7: Custom Agents
+
+> Documentation: [code.claude.com/docs/en/custom-agents](https://code.claude.com/docs/en/custom-agents)
+
+### What Are Custom Agents
+
+**Custom Agents** are reusable agent configurations stored in `.claude/agents/` directory. Think of them as "role profiles" — you define an agent's personality, tools, and constraints once, then invoke it by name.
+
+While Skills give Claude *knowledge* (instructions and references), Custom Agents give Claude a *role* — a complete persona with specific behavior, permissions, and focus areas.
+
+### Creating a Custom Agent
+
+Create a markdown file in `.claude/agents/`:
+
+```
+.claude/agents/
+├── security-reviewer.md
+├── data-analyst.md
+└── migration-helper.md
+```
+
+Each file defines the agent's behavior:
+
+```markdown
+---
+name: security-reviewer
+description: Reviews code for security vulnerabilities
+model: claude-opus-4-6
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+allowed_tools_pattern: "^(Read|Grep|Glob|Bash)$"
+---
+
+# Security Reviewer
+
+You are a security-focused code reviewer. Your job is to find
+vulnerabilities in code.
+
+## What to Check
+
+1. SQL injection
+2. XSS (Cross-Site Scripting)
+3. Authentication/authorization flaws
+4. Hardcoded secrets
+5. Insecure dependencies
+6. Input validation gaps
+
+## Output Format
+
+For each issue found:
+- **Severity**: Critical / High / Medium / Low
+- **File**: path and line number
+- **Issue**: description
+- **Fix**: recommended solution
+
+## Rules
+
+- NEVER modify files — only read and report
+- Check EVERY file in the PR diff
+- Always check for OWASP Top 10
+```
+
+### Invoking Custom Agents
+
+In Claude Code, use the `/agents` command or reference them directly:
+
+```
+> /agents security-reviewer Review the changes in the last 3 commits
+
+> /agents data-analyst Analyze the sales data in data/sales.csv
+```
+
+Custom agents can also be launched as teammates in Agent Teams:
+
+```
+Launch a security-reviewer agent to audit the auth module.
+Launch a data-analyst agent to generate the quarterly report.
+```
+
+### Example: Data Analyst Agent
+
+```markdown
+---
+name: data-analyst
+description: Analyzes data files and generates reports with visualizations
+model: claude-sonnet-4-5-20250929
+---
+
+# Data Analyst
+
+You are a data analyst. When given a dataset, you:
+
+1. Load and inspect the data (shape, types, nulls)
+2. Generate summary statistics
+3. Identify patterns and anomalies
+4. Create visualizations (matplotlib/seaborn)
+5. Write a report in markdown
+
+## Tools
+
+- Use pandas for data manipulation
+- Use matplotlib/seaborn for charts
+- Save charts to `reports/charts/`
+- Save reports to `reports/`
+
+## Rules
+
+- Always show your methodology
+- Flag data quality issues
+- Include both summary and detailed findings
+```
+
+### Example: Migration Helper Agent
+
+```markdown
+---
+name: migration-helper
+description: Helps migrate code between frameworks or language versions
+model: claude-opus-4-6
+---
+
+# Migration Helper
+
+You specialize in code migrations. Your approach:
+
+1. **Audit** — scan the codebase for patterns that need migration
+2. **Plan** — create a migration plan with priorities
+3. **Execute** — migrate file by file, running tests after each change
+4. **Verify** — run the full test suite and check for regressions
+
+## Rules
+
+- Never migrate and change logic at the same time
+- One migration step per commit
+- Always keep the code in a working state
+- If tests break, fix before continuing
+```
+
+### Custom Agents vs Skills vs CLAUDE.md
+
+| Feature | CLAUDE.md | Skills | Custom Agents |
+|---------|-----------|--------|---------------|
+| **Purpose** | Project rules (always active) | Knowledge on demand | Complete role profiles |
+| **When loaded** | Every session | When triggered | When invoked |
+| **Scope** | Entire project | Specific domain | Specific task type |
+| **Can restrict tools** | No | No | Yes |
+| **Can set model** | No | No | Yes |
+| **Best for** | Coding standards, project context | Reference docs, workflows | Specialized roles, reviewers |
+
+### Team Setup with Custom Agents
+
+Custom agents shine when shared across a team. Commit the `.claude/agents/` directory to git:
+
+```
+my-project/
+├── .claude/
+│   ├── agents/
+│   │   ├── security-reviewer.md
+│   │   ├── perf-tester.md
+│   │   └── db-migration.md
+│   └── skills/
+│       └── ...
+├── CLAUDE.md
+└── src/
+```
+
+Every team member gets the same set of specialized agents, ensuring consistent quality and processes.
+
 ## Module Summary
 
 ### MCP
@@ -756,9 +927,16 @@ Every extension takes up space in the context. Priority order:
 - Marketplace for sharing extensions
 - Namespaces to avoid conflicts
 
+### Custom Agents
+- Reusable role profiles stored in `.claude/agents/`
+- Define behavior, tools, and constraints in a markdown file
+- Invoke by name: `/agents security-reviewer`
+- Can set model and restrict available tools
+- Commit to git for team-wide consistency
+
 ### Together
-- MCP + Skills + Hooks + Agent Teams = full workflow automation
-- `.mcp.json` + `.claude/skills/` + `.claude/settings.json` in git = unified tools for the whole team
+- MCP + Skills + Custom Agents + Hooks + Agent Teams = full workflow automation
+- `.mcp.json` + `.claude/skills/` + `.claude/agents/` + `.claude/settings.json` in git = unified tools for the whole team
 - From bug discovery to deploying the fix — all through Claude Code
 
 ---

@@ -542,6 +542,65 @@ in httpOnly cookies. Report with severity levels."
 - **The lead is fixed** — you cannot transfer leadership to another agent
 - **Split panes require tmux or iTerm2** — does not work in VS Code terminal or Ghostty
 
+## Approach 6: Background Agents
+
+> Documentation: [code.claude.com/docs/en/background-agents](https://code.claude.com/docs/en/background-agents)
+
+Background agents run Claude Code **in the cloud** — no local terminal needed. You give a task, close your laptop, and the agent works on a remote machine until it's done.
+
+### How it works
+
+1. You submit a task (from Claude Code, GitHub, or the web)
+2. Claude Code spins up a cloud environment with your repository
+3. The agent works autonomously — reads files, writes code, runs tests
+4. When done, it creates a PR or posts results
+
+### Launching a background agent
+
+From Claude Code:
+
+```bash
+# Launch a task in the background
+claude /background "Refactor the auth module to use JWT refresh tokens"
+
+# Check status of background tasks
+claude /background --list
+```
+
+From GitHub — mention `@claude` in an issue or PR comment:
+
+```
+@claude Implement the feature described in this issue.
+Use the existing patterns in src/api/ for the new endpoints.
+```
+
+### When to use background agents
+
+| Scenario | Why background |
+|----------|---------------|
+| Large refactoring | Takes 30+ minutes, no need to watch |
+| Running on CI | Agent works alongside your pipeline |
+| Overnight tasks | Submit before bed, review PR in the morning |
+| Parallel exploration | Launch 5 agents on different approaches |
+| Prototyping | "Build this feature" — come back to a ready PR |
+
+### Background agents vs local agents
+
+| | Local (terminal) | Background (cloud) |
+|---|---|---|
+| **Where it runs** | Your machine | Cloud VM |
+| **Interactive** | Yes — you can redirect | No — fully autonomous |
+| **Duration** | Limited by your session | Can run for hours |
+| **Result** | Changes in local files | PR on GitHub |
+| **Cost** | API calls only | API + compute |
+
+### Tips for background agents
+
+1. **Write detailed prompts** — you can't redirect mid-task, so be specific upfront
+2. **Include acceptance criteria** — "Tests must pass. Linter must be clean."
+3. **Reference files** — "Follow the patterns in src/api/users.py"
+4. **Set boundaries** — "Only modify files in src/auth/. Don't touch the database schema."
+
 ## Patterns for Working with Agent Armies
 
 ### Pattern 1: Pipeline
@@ -1081,7 +1140,8 @@ The key skill of the future — **ability to write good specifications** and **a
 ## Module Summary
 
 - Agent army means running multiple Claude Code instances for parallel work
-- 5 built-in approaches: manual terminals, bash orchestrator, IDE sub-agents, specification as contract, **Agent Teams**
+- 6 built-in approaches: manual terminals, bash orchestrator, IDE sub-agents, specification as contract, **Agent Teams**, and **background agents**
+- Background agents run in the cloud — submit a task, close your laptop, get a PR
 - Agent Teams is a built-in Claude Code feature with shared task lists and inter-agent messaging
 - **Git worktrees** solve the conflict problem: each agent in its own isolated copy
 - **tmux** lets you see and manage dozens of agents on one screen

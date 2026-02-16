@@ -73,10 +73,9 @@ Both versions do the same thing. But the second one is reliable, readable, and r
 
 | Model | Speed | Code Quality | Price | Best For |
 |-------|-------|-------------|-------|----------|
-| Claude 3.5 Haiku | Very fast | Medium | $ | Simple tasks, quick fixes |
-| Claude 3.5 Sonnet | Fast | Good | $$ | Daily work |
-| Claude 4 Sonnet | Fast | Very good | $$ | Complex tasks, refactoring |
-| Claude 4 Opus | Slow | Excellent | $$$$ | Architecture, complex logic |
+| Claude 4.5 Haiku | Very fast | Good | $ | Simple tasks, quick fixes |
+| Claude 4.5 Sonnet | Fast | Very good | $$ | Daily work, refactoring |
+| Claude 4.6 Opus | Slower | Excellent | $$$$ | Architecture, complex logic |
 
 ### How to Choose a Model
 
@@ -103,11 +102,11 @@ Both versions do the same thing. But the second one is reliable, readable, and r
 
 ```bash
 # Launch with a specific model
-claude --model claude-sonnet-4-20250514
+claude --model claude-sonnet-4-5-20250929
 
 # Inside a session
-/model claude-sonnet-4-20250514
-/model claude-opus-4-20250514
+/model claude-sonnet-4-5-20250929
+/model claude-opus-4-6
 ```
 
 ## Common Quality Issues
@@ -315,9 +314,8 @@ After writing the code:
 
 | Model | Result | Comment |
 |-------|--------|---------|
-| Claude 4 Opus | ~72% | Best result among all models* |
-| Claude 4 Sonnet | ~65% | Excellent price/quality balance |
-| Claude 3.5 Sonnet | ~49% | Good for everyday tasks |
+| Claude 4.6 Opus | ~72% | Best result among all models* |
+| Claude 4.5 Sonnet | ~70% | Excellent price/quality balance |
 | GPT-4o | ~38% | Lags behind in coding benchmarks |
 
 *Data is approximate and may change with new versions.*

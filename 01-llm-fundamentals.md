@@ -26,8 +26,8 @@ The result of training is billions of numerical parameters (weights). Each param
 | Model | Parameters | Company |
 |-------|-----------|---------|
 | GPT-4 | ~1.8 trillion* | OpenAI |
-| Claude 3.5 Sonnet | undisclosed | Anthropic |
-| Claude 4 Opus | undisclosed | Anthropic |
+| Claude 4.5 Sonnet | undisclosed | Anthropic |
+| Claude 4.6 Opus | undisclosed | Anthropic |
 | Llama 3 | 8B — 405B | Meta |
 | Gemini | undisclosed | Google |
 
@@ -62,8 +62,8 @@ The context window is the model's "memory" within a single conversation.
 
 | Model | Context Size |
 |-------|-------------|
-| Claude 3.5 Sonnet | 200K tokens |
-| Claude 4 Opus | 200K tokens |
+| Claude 4.5 Sonnet | 200K tokens |
+| Claude 4.6 Opus | 200K tokens |
 | GPT-4 Turbo | 128K tokens |
 
 200K tokens is approximately 150,000 words or 500 pages of text. This means Claude can "see" your entire project at once.
@@ -115,10 +115,9 @@ chart, and saves it to a file chart.png
 
 | Model | Characteristic | Best For |
 |-------|---------------|----------|
-| Claude 3.5 Haiku | Fast and cheap | Simple tasks, chatbots |
-| Claude 3.5 Sonnet | Balance of speed and quality | Daily coding work |
-| Claude 4 Sonnet | Improved quality | Complex tasks, analysis |
-| Claude 4 Opus | Maximum quality | The most complex tasks |
+| Claude 4.5 Haiku | Fast and cheap | Simple tasks, chatbots |
+| Claude 4.5 Sonnet | Balance of speed and quality | Daily coding work |
+| Claude 4.6 Opus | Maximum quality | The most complex tasks |
 
 ## Why is Claude Good for Programming?
 

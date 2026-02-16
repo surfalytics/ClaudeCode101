@@ -145,7 +145,7 @@ claude -p "explain what the file main.py does"
 claude --continue
 
 # Launch with a specific model
-claude --model claude-sonnet-4-20250514
+claude --model claude-sonnet-4-5-20250929
 ```
 
 ## Your First Example: Hello World

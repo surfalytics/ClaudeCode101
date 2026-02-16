@@ -286,19 +286,51 @@ claude -p "Fix all pylint errors in the project"
 
 ### Using in a CI/CD Pipeline
 
+Anthropic provides an **official GitHub Action** — `anthropics/claude-code-action` — purpose-built for CI/CD integration. It handles authentication, manages permissions, and posts results directly as PR comments.
+
 ```yaml
 # .github/workflows/code-review.yml
 name: AI Code Review
-on: [pull_request]
+on:
+  pull_request:
+  issue_comment:
+    types: [created]
+
 jobs:
   review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Review this PR for:
+            1. Code quality and best practices
+            2. Potential bugs
+            3. Security issues
+            Provide actionable feedback.
+```
+
+The action supports multiple triggers:
+- **On PR open** — automatic review of new pull requests
+- **On comment** — mention `@claude` in a PR comment to ask questions or request changes
+- **On push** — run checks on every push to a PR branch
+
+You can also use headless mode directly for simpler setups:
+
+```yaml
       - name: AI Review
         run: |
-          npm install -g @anthropic-ai/claude-code
-          claude -p "Review the changes in this PR and suggest improvements"
+          claude -p "Review the changes in this PR and suggest improvements" \
+            --output-format json
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
