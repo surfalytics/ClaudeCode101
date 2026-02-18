@@ -17,23 +17,28 @@ Claude Code works with Anthropic models (Claude) by default. But there are situa
 Claude Code uses an API to communicate with the model. The key trick: you can swap the URL where Claude Code sends requests:
 
 ```bash
-export ANTHROPIC_BASE_URL="https://other-server.com/v1"
+export ANTHROPIC_BASE_URL="https://other-server.com/api"
 export ANTHROPIC_AUTH_TOKEN="your-key"
+export ANTHROPIC_API_KEY=""  # must be explicitly empty to prevent conflicts with old Anthropic key
 ```
 
-Claude Code thinks it's talking to Anthropic, but requests actually go to another server. That server needs to support an OpenAI-compatible API.
+Claude Code thinks it's talking to Anthropic, but requests actually go to another server. That server needs to support the Anthropic Messages API.
 
 ## Method 1: OpenRouter — Universal Gateway
 
 [OpenRouter](https://openrouter.ai/) is a single API with access to 400+ models from 60+ providers. One registration, one key, hundreds of models.
 
 ```bash
-export ANTHROPIC_BASE_URL="https://openrouter.ai/api/v1"
+export ANTHROPIC_BASE_URL="https://openrouter.ai/api"
 export ANTHROPIC_AUTH_TOKEN="or_your_key"
-export ANTHROPIC_MODEL="openai/gpt-oss-20b"
+export ANTHROPIC_API_KEY=""  # Important: leave empty to avoid conflicts
 
 claude --model openai/gpt-oss-20b
 ```
+
+> **Important:** if you previously logged into Claude Code via Anthropic, run `/logout` before using OpenRouter. Also, don't use a `.env` file — Claude Code doesn't read it. Add variables to `~/.bashrc` or `~/.zshrc` instead.
+
+**Free accounts:** OpenRouter gives access to free models without depositing credits, but with a limit of ~50 API calls per day to free models. For active use, consider topping up your balance with at least $5.
 
 Free models:
 
@@ -99,42 +104,96 @@ Smart routing:
 
 Result: "format this JSON" goes to a free model, while "design a microservice architecture" goes to Claude or GPT.
 
-## Method 3: Ollama — Models on Your Own Computer
+## Method 3: Ollama — Models on Your Own Computer (Free)
 
-[Ollama](https://ollama.com/) lets you run models locally. Code stays on your machine — nothing leaves.
+### What is Ollama
+
+[Ollama](https://ollama.com/) is a free tool for running large language models (LLMs) locally on your computer. Think of it as "Docker for LLMs": you download a model with one command and start using it immediately. Ollama is built on [llama.cpp](https://github.com/ggml-org/llama.cpp) and optimized for running on regular computers — no expensive servers or cloud subscriptions needed.
+
+**Key features:**
+
+- **Completely free** — no token fees, subscriptions, or limits
+- **Privacy** — code and data never leave your computer
+- **Works offline** — no internet needed after downloading a model
+- **Simple CLI** — `ollama pull`, `ollama run`, `ollama launch` — everything is intuitive
+- **OpenAI-compatible API** — works with any tools, including Claude Code
+- **GPU acceleration** — supports Apple Silicon (Metal), NVIDIA (CUDA), and AMD (ROCm)
+- **Model library** — access hundreds of open-source models via [ollama.com/library](https://ollama.com/library)
+
+Starting with **version 0.14.0**, Ollama supports the **Anthropic Messages API**, making the integration with Claude Code native — no proxy needed.
+
+### Installation
 
 ```bash
-# macOS
+# macOS (via Homebrew)
 brew install ollama
 
-# Download models for code
-ollama pull qwen3:4b
-ollama pull deepseek-coder:6.7b
+# macOS / Linux (universal)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Or download the app from ollama.com
 ```
 
-Connecting to Claude Code:
+### Quick Start: ollama launch
+
+The simplest way — the `ollama launch` command automatically configures environment variables and launches Claude Code:
 
 ```bash
-export ANTHROPIC_BASE_URL="http://localhost:11434/v1"
-export ANTHROPIC_AUTH_TOKEN="ollama"
-export ANTHROPIC_MODEL="qwen3:4b"
+# Download a model and launch Claude Code with one command
+ollama launch claude
 
-claude
+# Or configure first, then launch
+ollama launch claude --config
 ```
 
-When this is useful:
-- **Private code** — client data, internal company code
-- **No internet** — working on a plane, in an isolated environment
-- **No limits** — run as much as you want, only limited by your hardware
-- **Experiments** — try new open-source models
+The `ollama launch` command sets all required environment variables automatically — no manual configuration needed.
 
-Hardware requirements:
+### Manual Setup
+
+If you want full control over the process:
+
+```bash
+# Download models for code
+ollama pull qwen3-coder
+ollama pull gpt-oss:20b
+ollama pull glm-4.7
+
+# Connect to Claude Code
+export ANTHROPIC_BASE_URL="http://localhost:11434"
+export ANTHROPIC_AUTH_TOKEN="ollama"
+
+# Launch Claude Code with your chosen model
+claude --model qwen3-coder
+```
+
+### Recommended Models for Claude Code
+
+| Model | Size | Best for | Min RAM |
+|-------|------|----------|---------|
+| `qwen3-coder` | ~30B | Best for code, long context (262K) | 32 GB |
+| `gpt-oss:20b` | 20B | Open-weight from OpenAI, good balance | 16 GB |
+| `glm-4.7` | 30B MoE (3B active) | Native tool calling, fast | 32 GB |
+| `gpt-oss:120b` | 120B | Maximum quality, needs powerful hardware | 64+ GB |
+
+> **Important:** Claude Code requires models with a large context window. At least **64K tokens** is recommended for comfortable coding.
+
+### When This is Useful
+
+- **Private code** — client data, internal company code, NDA projects
+- **No internet** — working on a plane, in an isolated environment, on air-gapped servers
+- **No limits** — run as much as you want, only limited by your hardware
+- **No cost** — $0 forever, you only pay for electricity
+- **Experiments** — try new open-source models right after release
+
+### Hardware Requirements
 
 | Model Size | RAM | GPU | Speed |
 |-----------|-----|-----|-------|
 | 4B parameters | 8 GB | Not required | Fast |
-| 7B parameters | 16 GB | Recommended | Medium |
-| 14B+ parameters | 32+ GB | Required | Slow without GPU |
+| 7–20B parameters | 16–32 GB | Recommended | Medium |
+| 30B+ parameters | 32+ GB | Required | Slow without GPU |
+
+> **Honest warning about speed:** local models are significantly slower than cloud APIs. On a MacBook Pro with M1 Max (64 GB RAM), a simple request can take 30–60 seconds, and file operations up to 2 minutes. For comfortable work, Apple Silicon with 32+ GB unified memory or a PC with an NVIDIA GPU is recommended.
 
 ## Method 4: LiteLLM — Proxy for Mixed Configurations
 
@@ -233,7 +292,7 @@ This is important to know before you start experimenting.
 |----------|-----------|------|---------|---------|
 | **OpenRouter** | Simple | From $0 (free models) | Medium | Depends on model |
 | **Claude Code Router** | Medium | From $0 | Medium | Smart routing |
-| **Ollama** | Medium | $0 (needs hardware) | Maximum | Limited by model size |
+| **Ollama** | Simple (`ollama launch`) | $0 (needs hardware) | Maximum | Limited by model size |
 | **LiteLLM** | Complex | Depends on providers | Medium | Flexible |
 | **Bedrock/Vertex/Foundry** | Medium | Pay-as-you-go | High (corporate) | Claude (full quality) |
 
@@ -244,8 +303,9 @@ This is important to know before you start experimenting.
 ```bash
 # 1. Register at openrouter.ai and get a key
 # 2. Set variables
-export ANTHROPIC_BASE_URL="https://openrouter.ai/api/v1"
+export ANTHROPIC_BASE_URL="https://openrouter.ai/api"
 export ANTHROPIC_AUTH_TOKEN="or_your_key"
+export ANTHROPIC_API_KEY=""
 
 # 3. Launch with a free model
 claude --model qwen/qwen3-coder:free
@@ -257,13 +317,14 @@ claude --model qwen/qwen3-coder:free
 # 1. Install Ollama
 brew install ollama
 
-# 2. Download a model
-ollama pull qwen3:4b
+# 2. Launch Claude Code with one command (downloads model automatically)
+ollama launch claude
 
-# 3. Connect Claude Code
-export ANTHROPIC_BASE_URL="http://localhost:11434/v1"
+# Or manually:
+ollama pull qwen3-coder
+export ANTHROPIC_BASE_URL="http://localhost:11434"
 export ANTHROPIC_AUTH_TOKEN="ollama"
-claude --model qwen3:4b
+claude --model qwen3-coder
 ```
 
 **For advanced users: Claude Code Router**
